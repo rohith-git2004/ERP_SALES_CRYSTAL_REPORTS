@@ -1,27 +1,33 @@
-
 const fs = require('node:fs');
 const path = require('node:path');
+
+require('dotenv').config({
+  path: path.resolve(__dirname, '..', '..', '.env')
+});
 
 const reportsRoot = path.resolve(
   process.env.CRYSTAL_REPORTS_DIR ||
     path.join(__dirname, '..', '..', '..', 'crystal-reports')
 );
 
+console.log('Crystal reports folder:', reportsRoot);
+
 function walkReports(directory, relativeToRoot = '') {
-  if (!fs.existsSync(directory)) return [];
+  if (!fs.existsSync(directory)) {
+    console.error('Crystal reports folder does not exist:', directory);
+    return [];
+  }
 
   const results = [];
 
-  for (const entry of fs.readdirSync(directory, {
-    withFileTypes: true
-  })) {
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     const absolute = path.join(directory, entry.name);
     const relative = path.join(relativeToRoot, entry.name);
 
-    if (entry.isDirectory()) {
+    if (fs.statSync(absolute).isDirectory()) {
       results.push(...walkReports(absolute, relative));
     } else if (
-      entry.isFile() &&
+      fs.statSync(absolute).isFile() &&
       entry.name.toLowerCase().endsWith('.rpt')
     ) {
       results.push({
@@ -36,10 +42,14 @@ function walkReports(directory, relativeToRoot = '') {
 }
 
 function listReports() {
-  return walkReports(reportsRoot).map(({ key, fileName }) => ({
-    key,
-    fileName
-  }));
+  const reports = walkReports(reportsRoot);
+
+  console.log(
+    'Discovered Crystal reports:',
+    reports.map(report => report.key)
+  );
+
+  return reports.map(({ key, fileName }) => ({ key, fileName }));
 }
 
 function resolveReport(reportKey) {
@@ -53,6 +63,7 @@ function resolveReport(reportKey) {
   }
 
   const normalizedKey = reportKey.replace(/^\/+|\/+$/g, '');
+
   const match = walkReports(reportsRoot).find(
     report => report.key === normalizedKey
   );
@@ -71,9 +82,7 @@ async function renderPdf(report, parameters = {}) {
   const rendererUrl = process.env.CRYSTAL_RENDERER_URL;
 
   if (!rendererUrl) {
-    const error = new Error(
-      'Crystal renderer is not configured. A compatible Windows Crystal Reports bridge is required.'
-    );
+    const error = new Error('Crystal renderer is not configured.');
     error.statusCode = 503;
     throw error;
   }
@@ -83,17 +92,14 @@ async function renderPdf(report, parameters = {}) {
   );
 
   const controller = new AbortController();
-  const timeout = setTimeout(
-    () => controller.abort(),
-    timeoutMs
-  );
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const response = await fetch(rendererUrl, {
       method: 'POST',
       headers: {
-        'content-type': 'application/json',
-        accept: 'application/pdf'
+        'Content-Type': 'application/json',
+        Accept: 'application/pdf'
       },
       body: JSON.stringify({
         reportKey: report.key,
@@ -118,7 +124,7 @@ async function renderPdf(report, parameters = {}) {
 
     if (!contentType.toLowerCase().includes('application/pdf')) {
       const error = new Error(
-        'Crystal renderer did not return application/pdf.'
+        'Crystal renderer did not return a PDF.'
       );
       error.statusCode = 502;
       throw error;
