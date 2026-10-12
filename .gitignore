@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Angular/build output
+**/dist/
+**/out-tsc/
+**/.angular/
+
+# Local secrets and environment files
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Tests / coverage
+coverage/
+.nyc_output/
+
+# Temp/backup files
+*.tmp
+*.bak
+
+# Keep real Crystal .rpt files versioned unless they contain sensitive embedded connection data.

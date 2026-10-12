@@ -1,0 +1,22 @@
+{
+  "name": "erp-sales-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Node.js/Express API for ERP Sales with SQL Server",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "check": "node --check src/server.js && node --check src/db.js && node --check src/routes/orders.js && node --check src/routes/reports.js && node --check src/services/crystalReports.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "mssql": "^11.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7"
+  }
+}
